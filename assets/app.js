@@ -5,7 +5,11 @@ const PRODUCTS = {
   dragon:{id:'dragon',name:"Dragon Power 9000 Sensitive Skin Spray for Men",price:19.99,size:'15 ml',stock:50,url:'product-dragon.html',image:'assets/images/product4-main.png'}
 };
 const menu = [
- ['Home','index.html'],['Shop','shop.html'],['About TOROLAGON','about.html'],['FAQ','faq.html'],['Contact','contact.html'],['Shipping Policy','shipping-policy.html'],['Return & Refund Policy','returns.html'],['Privacy Policy','privacy.html'],['Terms of Service','terms.html']
+ ['Home','index.html'],
+ ['Shop','shop.html'],
+ ['About TOROLAGON','about.html'],
+ ['FAQ','faq.html'],
+ ['Contact','contact.html']
 ];
 function getCart(){try{return JSON.parse(localStorage.getItem('torolagon_cart')||'{}')}catch(e){return {}}}
 function saveCart(c){localStorage.setItem('torolagon_cart',JSON.stringify(c));updateCartCount()}
