@@ -1,24 +1,9 @@
-TOROLAGON WEBSITE - READY FOR GITHUB PAGES
+TOROLAGON storefront
 
-1. Upload ALL files and folders from this package to the ROOT of your GitHub repository.
-2. Keep the assets folder exactly as included.
-3. In GitHub, open Settings > Pages.
-4. Set the site to deploy from the main branch/root if Pages is not already enabled.
-5. Point torolagon.com to GitHub Pages when you are ready.
+GitHub Pages: main / root. Preserve CNAME (www.torolagon.com) and Squarespace DNS.
 
-CURRENT STATUS
-- Multi-page responsive website is complete.
-- All 4 products are loaded with prices and stock references.
-- Cart works in browser local storage.
-- U.S.-only shipping language and policies are included.
-- Checkout button is intentionally disabled until Stripe is connected.
-- Customer service email: info@torolagon.com
+Products: Sensitive Skin Spray 15 ml $17.99; Massage Oil 10 ml $24.99; Dragon Power 9000 Sensitive Skin Spray 15 ml $19.99. Initial stock: 50 each.
 
-PRODUCTS
-1. TOROLAGON Men's Sensitive Skin Cream - $19.99 - 50 units
-2. TOROLAGON Men's Sensitive Skin Spray - $17.99 - 50 units
-3. TOROLAGON Men's Massage Oil - $24.99 - 50 units
-4. Dragon Power 9000 Sensitive Skin Spray for Men - $19.99 - 50 units
+U.S. only. Free shipping. 24–48 hour processing. Support: info@torolagon.com.
 
-NEXT STEP
-When Stripe is ready, the checkout button and payment flow can be connected without rebuilding the visual website.
+Cart stores product IDs and quantities only. Unknown and removed products are discarded. Checkout stays unavailable until a secure server, Stripe credentials, shared inventory, and signed payment webhooks are connected and verified. Never put secret keys in this repository or browser code.
