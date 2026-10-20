@@ -1,0 +1,15 @@
+{
+  "name": "torolagon-checkout",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "stripe": "^23.0.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.151.3"
+  }
+}
