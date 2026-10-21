@@ -48,6 +48,9 @@ function initStickyPurchase(){
  document.body.append(bar);document.body.classList.add('has-sticky-purchase');
  const syncPrice=()=>{const quantity=Number(document.querySelector(`[data-qty="${id}"]`).value);bar.querySelector('[data-sticky-price]').textContent=`${money(p.price*quantity)} · Quantity ${quantity}`;};
  document.querySelector('.quantity-row').addEventListener('click',syncPrice);
- const observer=new IntersectionObserver(entries=>{bar.hidden=entries[0].boundingClientRect.bottom>110;},{rootMargin:'-110px 0px 0px 0px',threshold:0});observer.observe(actions);
+ let scheduled=false;
+ const syncVisibility=()=>{bar.hidden=actions.getBoundingClientRect().bottom>110;scheduled=false;};
+ const scheduleVisibility=()=>{if(!scheduled){scheduled=true;requestAnimationFrame(syncVisibility);}};
+ window.addEventListener('scroll',scheduleVisibility,{passive:true});window.addEventListener('resize',scheduleVisibility);syncVisibility();
 }
 document.addEventListener('DOMContentLoaded',()=>{initLayout();initStickyPurchase();bindAddButtons();bindQty();bindGallery();bindAccordions();renderCart()});
