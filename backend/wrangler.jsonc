@@ -6,7 +6,7 @@
   "workers_dev": true,
   "vars": {
     "TEST_ENABLED": "true",
-    "LIVE_ENABLED": "false"
+    "LIVE_ENABLED": "true"
   },
   "durable_objects": {
     "bindings": [

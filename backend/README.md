@@ -4,7 +4,7 @@ The static storefront is served by GitHub Pages. Checkout sessions and inventory
 
 ## Launch gates
 
-`TEST_ENABLED` and `LIVE_ENABLED` are both false until their credentials and signed webhook delivery have been verified. A successful return page never marks an order paid. The server checks Stripe's payment status; only verified payment notifications and reconciliation update order state.
+`TEST_ENABLED` and `LIVE_ENABLED` are enabled. The three-product sandbox payment (6297 USD cents), verified paid return and actual webhook delivery (HTTP 200, received true) passed. Live Checkout was verified with all three existing prices, required email, U.S.-only shipping, free shipping, and cancellation back to the saved cart; no real charge was submitted. Live payment notification delivery remains to be observed on the first real payment. A successful return page never marks an order paid. The server checks Stripe's payment status; only verified payment notifications and reconciliation update order state.
 
 Encrypted Worker secrets (never store values in GitHub, chat, local source, or browser code):
 
