@@ -40,4 +40,14 @@ function renderCart(){const root=document.getElementById('cartItems');if(!root)r
  document.querySelectorAll('[data-cart-plus]').forEach(b=>b.onclick=()=>{const c=getCart(),id=b.dataset.cartPlus;c[id]=Math.min(PRODUCTS[id].stock,(c[id]||0)+1);saveCart(c);renderCart()});
  const subtotal=ids.reduce((s,id)=>s+PRODUCTS[id].price*c[id],0);document.getElementById('subtotal').textContent=money(subtotal);document.getElementById('total').textContent=money(subtotal);document.getElementById('cartSummary').style.display='block';window.dispatchEvent(new Event('torolagon:cart'));
 }
-document.addEventListener('DOMContentLoaded',()=>{initLayout();bindAddButtons();bindQty();bindGallery();bindAccordions();renderCart()});
+function initStickyPurchase(){
+ const actions=document.querySelector('.product-actions');if(!actions)return;
+ const id=actions.querySelector('[data-add]')?.dataset.add,p=PRODUCTS[id];if(!p)return;
+ const bar=document.createElement('aside');bar.className='sticky-purchase';bar.hidden=true;bar.setAttribute('aria-label','Product purchase options');
+ bar.innerHTML=`<div class="container sticky-purchase-inner"><img src="${p.image}" alt=""><div class="sticky-product"><strong>${p.name}</strong><span data-sticky-price>${money(p.price)} · Quantity 1</span></div><div class="product-actions"><button class="btn btn-primary" data-add="${id}">Add to cart</button><button class="btn btn-dark" data-buy-now="${id}" disabled>Buy now</button></div></div>`;
+ document.body.append(bar);document.body.classList.add('has-sticky-purchase');
+ const syncPrice=()=>{const quantity=Number(document.querySelector(`[data-qty="${id}"]`).value);bar.querySelector('[data-sticky-price]').textContent=`${money(p.price*quantity)} · Quantity ${quantity}`;};
+ document.querySelector('.quantity-row').addEventListener('click',syncPrice);
+ const observer=new IntersectionObserver(entries=>{bar.hidden=entries[0].boundingClientRect.bottom>110;},{rootMargin:'-110px 0px 0px 0px',threshold:0});observer.observe(actions);
+}
+document.addEventListener('DOMContentLoaded',()=>{initLayout();initStickyPurchase();bindAddButtons();bindQty();bindGallery();bindAccordions();renderCart()});

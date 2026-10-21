@@ -59,3 +59,16 @@ button,input,textarea{font:inherit}
 @media(max-width:1080px){.product-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){.product-grid{grid-template-columns:1fr}.product-card h3{min-height:0}.cart-row{grid-template-columns:70px minmax(0,1fr);gap:12px}.cart-row .qty{grid-column:2;width:max-content}.cart-row .cart-price{grid-column:2}.cart-summary{padding:20px;margin-top:24px}.announcement{font-size:11px}.brand img{width:130px}.header-actions .cart-link{min-height:44px}.menu-btn{min-height:44px;min-width:44px}.page-hero{padding:40px 0}.product-page,.cart-page{padding:32px 0}.quantity-row{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+.product-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.product-actions .btn{min-width:0;min-height:48px;padding:13px 16px}
+.sticky-purchase{position:fixed;inset:auto 0 0;z-index:70;background:rgba(255,255,255,.98);border-top:1px solid var(--line);box-shadow:0 -8px 30px rgba(0,0,0,.08);padding:12px 0 calc(12px + env(safe-area-inset-bottom));backdrop-filter:blur(12px)}
+.sticky-purchase[hidden]{display:none}
+.sticky-purchase-inner{display:flex;align-items:center;gap:14px}
+.sticky-purchase-inner>img{width:52px;height:52px;object-fit:contain;border-radius:8px;border:1px solid var(--line)}
+.sticky-product{flex:1;min-width:0;display:grid;gap:3px}
+.sticky-product strong{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}
+.sticky-product span{font-size:13px;color:#676159}
+.sticky-purchase .product-actions{width:340px;flex-shrink:0}
+.has-sticky-purchase{padding-bottom:100px}
+.has-sticky-purchase .cart-toast{bottom:115px}
+@media(max-width:620px){.sticky-purchase-inner{flex-wrap:wrap;gap:8px 10px}.sticky-purchase-inner>img{width:36px;height:36px}.sticky-product strong{font-size:12px}.sticky-product span{font-size:12px}.sticky-purchase .product-actions{width:100%;gap:10px}.sticky-purchase .btn{min-height:44px;padding:10px 12px;font-size:14px}.has-sticky-purchase{padding-bottom:145px}.has-sticky-purchase .cart-toast{bottom:150px}.product-actions{gap:10px}}
