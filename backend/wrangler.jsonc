@@ -4,7 +4,24 @@
   "account_id": "a22321199aae13235a30431a0f7ab841",
   "compatibility_date": "2026-10-20",
   "workers_dev": true,
-  "vars": {"TEST_ENABLED":"false","LIVE_ENABLED":"false"},
-  "durable_objects": {"bindings":[{"name":"STORE","class_name":"TorolagonStore"}]},
-  "migrations": [{"tag":"v1","new_sqlite_classes":["TorolagonStore"]}]
+  "vars": {
+    "TEST_ENABLED": "true",
+    "LIVE_ENABLED": "false"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "STORE",
+        "class_name": "TorolagonStore"
+      }
+    ]
+  },
+  "migrations": [
+    {
+      "tag": "v1",
+      "new_sqlite_classes": [
+        "TorolagonStore"
+      ]
+    }
+  ]
 }

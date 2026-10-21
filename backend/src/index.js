@@ -29,7 +29,7 @@ export function ready(env,mode) {
 function client(env,mode){return new Stripe(env[`STRIPE_${mode.toUpperCase()}_KEY`],{apiVersion:VERSION,httpClient:Stripe.createFetchHttpClient(),maxNetworkRetries:2,timeout:20000});}
 export function sessionParams(cart,id,expires,mode='test') {
   return {
-    mode:'payment',currency:'usd',billing_address_collection:'required',customer_creation:'always',
+    mode:'payment',currency:'usd',adaptive_pricing:{enabled:false},billing_address_collection:'required',customer_creation:'always',
     phone_number_collection:{enabled:false},shipping_address_collection:{allowed_countries:['US']},
     shipping_options:[{shipping_rate_data:{type:'fixed_amount',fixed_amount:{amount:0,currency:'usd'},display_name:'Free U.S. shipping'}}],
     line_items:mode==='live'?cart.map(item=>({quantity:item.quantity,price:LIVE_PRICES[item.id]})):cart.map(item=>({quantity:item.quantity,price_data:{currency:'usd',unit_amount:CATALOG[item.id].cents,product_data:{name:CATALOG[item.id].name,description:`${CATALOG[item.id].size}. Orders processed within 24–48 hours.`,images:[`${SITE}/assets/images/${CATALOG[item.id].image}`],metadata:{torolagon_product:item.id}}}})),

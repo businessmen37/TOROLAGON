@@ -21,7 +21,7 @@ test('rejects unknown, removed, duplicated and invalid quantities',()=>{
 });
 test('prices are server controlled and checkout requires US address, billing, email and free shipping',async()=>{
  const f=fixture();const r=await f.checkout([{id:'spray',quantity:2,price:1},{id:'oil',quantity:1}]);assert.equal(r.status,200);
- const p=f.params[0];assert.equal(p.line_items.reduce((a,i)=>a+i.price_data.unit_amount*i.quantity,0),6097);assert.equal(p.customer_creation,'always');assert.equal(p.billing_address_collection,'required');assert.deepEqual(p.shipping_address_collection.allowed_countries,['US']);assert.equal(p.shipping_options[0].shipping_rate_data.fixed_amount.amount,0);assert.ok(p.success_url.startsWith('https://www.torolagon.com/'));assert.ok(p.cancel_url.includes('/cart.html'));assert.ok(!('payment_method_types' in p));
+ const p=f.params[0];assert.equal(p.line_items.reduce((a,i)=>a+i.price_data.unit_amount*i.quantity,0),6097);assert.equal(p.customer_creation,'always');assert.equal(p.adaptive_pricing.enabled,false);assert.equal(p.billing_address_collection,'required');assert.deepEqual(p.shipping_address_collection.allowed_countries,['US']);assert.equal(p.shipping_options[0].shipping_rate_data.fixed_amount.amount,0);assert.ok(p.success_url.startsWith('https://www.torolagon.com/'));assert.ok(p.cancel_url.includes('/cart.html'));assert.ok(!('payment_method_types' in p));
 });
 test('inventory cannot be oversold by concurrent checkouts and rejected carts roll back all lines',async()=>{
  const f=fixture();const results=await Promise.all([f.checkout([{id:'spray',quantity:40}]),f.checkout([{id:'spray',quantity:40}])]);assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);assert.equal(f.stock('spray'),10);
