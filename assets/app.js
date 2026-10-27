@@ -1,7 +1,8 @@
 const PRODUCTS = {
+  kit:{id:'kit',name:'TOROLAGON Oil & Spray Kit',price:29.98,size:'Oil 10 ml + Spray 15 ml',stock:50,url:'product-kit.html',image:'assets/images/product3-main.png'},
   spray:{id:'spray',name:"TOROLAGON Men’s Sensitive Skin Spray",price:17.99,size:'15 ml',stock:50,url:'product-spray.html',image:'assets/images/product2-main.png'},
-  oil:{id:'oil',name:"TOROLAGON Men’s Massage Oil",price:24.99,size:'10 ml',stock:50,url:'product-oil.html',image:'assets/images/product3-main.png'},
-  dragon:{id:'dragon',name:"Dragon Power 9000 Sensitive Skin Spray for Men",price:19.99,size:'15 ml',stock:50,url:'product-dragon.html',image:'assets/images/product4-main.png'}
+  oil:{id:'oil',name:"TOROLAGON Men’s Massage Oil",price:15.99,size:'10 ml',stock:50,url:'product-oil.html',image:'assets/images/product3-main.png'},
+  dragon:{id:'dragon',name:"Dragon Power 9000 Sensitive Skin Spray for Men",price:17.99,size:'15 ml',stock:50,url:'product-dragon.html',image:'assets/images/product4-main.png'}
 };
 const menu = [
  ['Home','index.html'],

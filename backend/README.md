@@ -26,11 +26,11 @@ Test page: `/checkout-test.html` (no real charges, not indexed or linked from na
 
 ## Inventory and fulfillment
 
-Separate SQLite-backed Durable Objects isolate test and live inventory. Each starts with 50 units of each of the three catalog products. Inventory is reserved atomically before creating Checkout, and released only after a confirmed expired or failed session. Network uncertainty keeps a reservation in place. Sessions expire after 31 minutes; reconciliation retries uncertain operations using the same idempotency key. Persistent uncertainty needs operator review rather than restoring stock blindly.
+Separate SQLite-backed Durable Objects isolate test and live inventory. Each starts with 50 units of each of the three individual products. The Oil & Spray Kit shares oil and spray stock: one kit reserves one of each. Kit availability is the lower of the two component quantities; mixed carts aggregate all component demand before reserving atomically. Inventory is reserved atomically before creating Checkout, and released only after a confirmed expired or failed session. Network uncertainty keeps a reservation in place. Sessions expire after 31 minutes; reconciliation retries uncertain operations using the same idempotency key. Persistent uncertainty needs operator review rather than restoring stock blindly.
 
 Paid orders remain in Stripe for the merchant to prepare and ship within 24–48 hours. Use Stripe's payment notifications and Dashboard; this service does not purchase labels or send tracking emails. Stripe customer receipts must be enabled. No separate shipment notification system is claimed to be automated.
 
-Live prices are mapped to the three existing Stripe prices, verified at 1799, 2499 and 1999 USD cents. Test sessions use the same authoritative amounts. Neither client-supplied prices nor unknown product IDs are trusted. Only U.S. shipping addresses are accepted, shipping is free, billing address is collected, and Checkout collects customer email.
+Current live prices map to Stripe Prices at 1799 cents for the TOROLAGON spray, 1599 cents for oil, 1799 cents for Dragon Power 9000, and 2998 cents for the Oil & Spray Kit. Historical prices remain for existing order references. Test sessions use the same authoritative amounts. Neither client-supplied prices nor unknown product IDs are trusted. Only U.S. shipping addresses are accepted, shipping is free, billing address is collected, and Checkout collects customer email.
 
 No active tax registrations were present in Stripe at setup, so automatic tax collection is not enabled. Registration and applicable obligations must be resolved by the merchant before enabling collection.
 

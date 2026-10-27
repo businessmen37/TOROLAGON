@@ -2,7 +2,7 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import Stripe from 'stripe';
-import worker,{TorolagonStore,normalizeCart,sessionParams,ready} from '../src/index.js';
+import worker,{TorolagonStore,normalizeCart,sessionParams,ready,inventoryItems,inventoryListing} from '../src/index.js';
 
 function fixture(){
  const db=new DatabaseSync(':memory:');
@@ -21,7 +21,7 @@ test('rejects unknown, removed, duplicated and invalid quantities',()=>{
 });
 test('prices are server controlled and checkout requires US address, billing, email and free shipping',async()=>{
  const f=fixture();const r=await f.checkout([{id:'spray',quantity:2,price:1},{id:'oil',quantity:1}]);assert.equal(r.status,200);
- const p=f.params[0];assert.equal(p.line_items.reduce((a,i)=>a+i.price_data.unit_amount*i.quantity,0),6097);assert.equal(p.customer_creation,'always');assert.equal(p.adaptive_pricing.enabled,false);assert.equal(p.billing_address_collection,'required');assert.deepEqual(p.shipping_address_collection.allowed_countries,['US']);assert.equal(p.shipping_options[0].shipping_rate_data.fixed_amount.amount,0);assert.ok(p.success_url.startsWith('https://www.torolagon.com/'));assert.ok(p.cancel_url.includes('/cart.html'));assert.ok(!('payment_method_types' in p));
+ const p=f.params[0];assert.equal(p.line_items.reduce((a,i)=>a+i.price_data.unit_amount*i.quantity,0),5197);assert.equal(p.customer_creation,'always');assert.equal(p.adaptive_pricing.enabled,false);assert.equal(p.billing_address_collection,'required');assert.deepEqual(p.shipping_address_collection.allowed_countries,['US']);assert.equal(p.shipping_options[0].shipping_rate_data.fixed_amount.amount,0);assert.ok(p.success_url.startsWith('https://www.torolagon.com/'));assert.ok(p.cancel_url.includes('/cart.html'));assert.ok(!('payment_method_types' in p));
 });
 test('inventory cannot be oversold by concurrent checkouts and rejected carts roll back all lines',async()=>{
  const f=fixture();const results=await Promise.all([f.checkout([{id:'spray',quantity:40}]),f.checkout([{id:'spray',quantity:40}])]);assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);assert.equal(f.stock('spray'),10);
@@ -51,4 +51,32 @@ test('origin protection, credential gates and signed webhook validation',async()
  assert.equal((await worker.fetch(new Request('https://api/test/webhook',{method:'POST',body:'{}'}),env)).status,400);
  const body=JSON.stringify({id:'evt_example',type:'unhandled.event',livemode:false});const signature=Stripe.webhooks.generateTestHeaderString({payload:body,secret:env.STRIPE_TEST_WEBHOOK_SECRET});assert.equal((await worker.fetch(new Request('https://api/test/webhook',{method:'POST',headers:{'Stripe-Signature':signature},body}),env)).status,200);
  const old=Stripe.webhooks.generateTestHeaderString({payload:body,secret:env.STRIPE_TEST_WEBHOOK_SECRET,timestamp:1});assert.equal((await worker.fetch(new Request('https://api/test/webhook',{method:'POST',headers:{'Stripe-Signature':old},body}),env)).status,400);
+});
+
+
+test('kit charges 2998 cents and reserves both components atomically',async()=>{
+ const f=fixture(),r=await f.checkout([{id:'kit',quantity:2},{id:'oil',quantity:1}]);assert.equal(r.status,200);
+ assert.equal(f.stock('oil'),47);assert.equal(f.stock('spray'),48);
+ assert.equal(f.params[0].line_items.reduce((sum,item)=>sum+item.quantity*item.price_data.unit_amount,0),7595);
+ const listing=inventoryListing([{id:'oil',remaining:47},{id:'spray',remaining:48},{id:'dragon',remaining:50}]);assert.equal(listing.find(p=>p.id==='kit').remaining,47);
+});
+test('kit and single-item purchases cannot oversell shared component stock',async()=>{
+ const f=fixture(),results=await Promise.all([f.checkout([{id:'kit',quantity:40}]),f.checkout([{id:'oil',quantity:40}])]);assert.deepEqual(results.map(r=>r.status).sort(),[200,409]);
+ const g=fixture(),r=await g.checkout([{id:'kit',quantity:30},{id:'spray',quantity:21}]);assert.equal(r.status,409);assert.equal(g.stock('oil'),50);assert.equal(g.stock('spray'),50);
+});
+test('expired kit checkout restores both components exactly once',async()=>{
+ const f=fixture(),r=await f.checkout([{id:'kit',quantity:3}]);const s=f.sessions.get(r.sessionId);s.status='expired';await f.notify(s,'checkout.session.expired');await f.notify(s,'checkout.session.expired');assert.equal(f.stock('oil'),50);assert.equal(f.stock('spray'),50);
+});
+test('a paid kit retains its component reservation and records the purchased kit',async()=>{
+ const f=fixture(),id=crypto.randomUUID(),r=await f.checkout([{id:'kit',quantity:1}],id);await f.checkout([{id:'kit',quantity:1}],id);assert.equal(f.stock('oil'),49);assert.equal(f.stock('spray'),49);
+ const s=f.sessions.get(r.sessionId);s.status='complete';s.payment_status='paid';assert.equal((await f.notify(s)).status,200);assert.equal((await f.notify(s)).status,200);assert.equal(f.stock('oil'),49);assert.deepEqual(JSON.parse(f.store.row('SELECT cart FROM orders WHERE id=?',id).cart),[{id:'kit',quantity:1}]);
+});
+test('updated authoritative individual prices remain consistent across cart and checkout',()=>{
+ const p=sessionParams([{id:'oil',quantity:1},{id:'dragon',quantity:1}],'example',1900000000);
+ assert.deepEqual(p.line_items.map(item=>item.price_data.unit_amount),[1599,1799]);assert.deepEqual(inventoryItems([{id:'kit',quantity:2},{id:'spray',quantity:1}]),[{id:'oil',quantity:2},{id:'spray',quantity:3}]);
+});
+
+test('live checkout uses the verified new Stripe prices including the kit',()=>{
+ const p=sessionParams([{id:'oil',quantity:1},{id:'dragon',quantity:1},{id:'kit',quantity:1}],'example',1900000000,'live');
+ assert.deepEqual(p.line_items.map(i=>i.price),['price_1UVIQdRMaEJwj08xoaWMyRPI','price_1UVIRoRMaEJwj08xIRtqfpdT','price_1UVIU0RMaEJwj08xrgesX3N3']);
 });

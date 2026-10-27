@@ -2,24 +2,37 @@ import Stripe from 'stripe';
 
 export const CATALOG = Object.freeze({
   spray: {name:'TOROLAGON Men’s Sensitive Skin Spray',size:'15 ml',cents:1799,image:'product2-main.png'},
-  oil: {name:'TOROLAGON Men’s Massage Oil',size:'10 ml',cents:2499,image:'product3-main.png'},
-  dragon: {name:'Dragon Power 9000 Sensitive Skin Spray for Men',size:'15 ml',cents:1999,image:'product4-main.png'}
+  oil: {name:'TOROLAGON Men’s Massage Oil',size:'10 ml',cents:1599,image:'product3-main.png'},
+  kit: {name:'TOROLAGON Oil & Spray Kit',size:'Massage Oil 10 ml + Sensitive Skin Spray 15 ml',cents:2998,image:'product3-main.png',components:{oil:1,spray:1}},
+  dragon: {name:'Dragon Power 9000 Sensitive Skin Spray for Men',size:'15 ml',cents:1799,image:'product4-main.png'}
 });
 export const ORIGINS = ['https://torolagon.com','https://www.torolagon.com'];
 export const EVENTS = ['checkout.session.completed','checkout.session.async_payment_succeeded','checkout.session.async_payment_failed','checkout.session.expired'];
 const SITE='https://www.torolagon.com';
 const VERSION='2026-09-30.endive';
-const LIVE_PRICES={spray:'price_1UPRCCRMaEJwj08xM0FuQy4b',oil:'price_1UPRCuRMaEJwj08xk6LiE83Q',dragon:'price_1UPRDvRMaEJwj08xk8tO02fn'};
+const LIVE_PRICES={spray:'price_1UPRCCRMaEJwj08xM0FuQy4b',oil:'price_1UVIQdRMaEJwj08xoaWMyRPI',dragon:'price_1UVIRoRMaEJwj08xIRtqfpdT',kit:'price_1UVIU0RMaEJwj08xrgesX3N3'};
 const json=(body,status=200)=>Response.json(body,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff'}});
 export class StoreError extends Error {constructor(message,status=400){super(message);this.status=status;}}
 export function normalizeCart(input) {
-  if (!Array.isArray(input)||input.length<1||input.length>3) throw new StoreError('Select between one and three products.');
+  if (!Array.isArray(input)||input.length<1||input.length>Object.keys(CATALOG).length) throw new StoreError('Select products from the collection.');
   const seen=new Set();
   return input.map(item=>{
     if (!item||!Object.hasOwn(CATALOG,item.id)||seen.has(item.id)||!Number.isInteger(item.quantity)||item.quantity<1||item.quantity>50) throw new StoreError('Invalid product or quantity.');
     seen.add(item.id);return {id:item.id,quantity:item.quantity};
   }).sort((a,b)=>a.id.localeCompare(b.id));
 }
+
+// Kits reserve their physical contents from the same inventory as individual items.
+export function inventoryItems(cart) {
+  const needed={};
+  for(const item of cart)for(const [id,units] of Object.entries(CATALOG[item.id].components||{[item.id]:1}))needed[id]=(needed[id]||0)+units*item.quantity;
+  return Object.entries(needed).map(([id,quantity])=>({id,quantity}));
+}
+export function inventoryListing(rows) {
+  const stock=Object.fromEntries(rows.map(row=>[row.id,row.remaining]));
+  return [...rows,{id:'kit',remaining:Math.min(stock.oil||0,stock.spray||0)}];
+}
+
 export const subtotal=cart=>cart.reduce((sum,item)=>sum+CATALOG[item.id].cents*item.quantity,0);
 export function ready(env,mode) {
   return env[`${mode.toUpperCase()}_ENABLED`]==='true' &&
@@ -84,7 +97,7 @@ export class TorolagonStore {
     this.sql.exec('CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)');
     this.sql.exec('CREATE TABLE IF NOT EXISTS limits (ip TEXT PRIMARY KEY, started INTEGER NOT NULL, count INTEGER NOT NULL)');
     this.sql.exec('CREATE INDEX IF NOT EXISTS pending_orders ON orders(state, expires)');
-    for(const id of Object.keys(CATALOG))this.sql.exec('INSERT OR IGNORE INTO inventory VALUES (?,50)',id);
+    for(const [id,product] of Object.entries(CATALOG))if(!product.components)this.sql.exec('INSERT OR IGNORE INTO inventory VALUES (?,50)',id);
   }
   row(query,...params){return this.sql.exec(query,...params).toArray()[0];}
   stripe(mode){return this.testClient||client(this.env,mode);}
@@ -92,7 +105,7 @@ export class TorolagonStore {
     try {
       const url=new URL(request.url),mode=request.headers.get('X-Store-Mode')||'test';
       if(url.pathname!=='/webhook')this.sql.exec("INSERT INTO settings VALUES ('mode',?) ON CONFLICT(key) DO UPDATE SET value=excluded.value",mode);
-      if(url.pathname==='/inventory')return json({products:this.sql.exec('SELECT id,remaining FROM inventory').toArray()});
+      if(url.pathname==='/inventory')return json({products:inventoryListing(this.sql.exec('SELECT id,remaining FROM inventory').toArray())});
       if(url.pathname==='/checkout'){
         const raw=await request.text();if(raw.length>4096)throw new StoreError('Request too large.',413);
         let body;try{body=JSON.parse(raw);}catch{throw new StoreError('Invalid cart.');}
@@ -110,10 +123,10 @@ export class TorolagonStore {
           this.ctx.storage.transactionSync(()=>{
             const limit=this.row('SELECT * FROM limits WHERE ip=?',hash);
             if(limit&&limit.started>now-600&&limit.count>=10)throw new StoreError('Too many checkout attempts. Please wait a few minutes.',429);
-            for(const item of cart){const stock=this.row('SELECT remaining FROM inventory WHERE id=?',item.id);if(stock.remaining<item.quantity)throw new StoreError(`Only ${stock.remaining} units of ${CATALOG[item.id].name} are available.`,409);}
+            for(const item of inventoryItems(cart)){const stock=this.row('SELECT remaining FROM inventory WHERE id=?',item.id);if(stock.remaining<item.quantity)throw new StoreError(`Only ${stock.remaining} units of ${CATALOG[item.id].name} are available.`,409);}
             this.sql.exec('INSERT INTO limits VALUES (?,?,1) ON CONFLICT(ip) DO UPDATE SET started=excluded.started,count=CASE WHEN limits.started>? THEN limits.count+1 ELSE 1 END',hash,limit&&limit.started>now-600?limit.started:now,now-600);
             this.sql.exec('DELETE FROM limits WHERE started<?',now-86400);
-            for(const item of cart)this.sql.exec('UPDATE inventory SET remaining=remaining-? WHERE id=?',item.quantity,item.id);
+            for(const item of inventoryItems(cart))this.sql.exec('UPDATE inventory SET remaining=remaining-? WHERE id=?',item.quantity,item.id);
             this.sql.exec('INSERT INTO orders (id,cart,total,state,expires,created) VALUES (?,?,?,?,?,?)',id,JSON.stringify(cart),subtotal(cart),'reserved',expires,now);
           });
           order=this.row('SELECT * FROM orders WHERE id=?',id);
@@ -168,7 +181,7 @@ export class TorolagonStore {
     this.ctx.storage.transactionSync(()=>{
       const current=this.row('SELECT state FROM orders WHERE id=?',order.id);
       if(!current||current.state==='paid'||current.state==='released')return;
-      for(const item of JSON.parse(order.cart))this.sql.exec('UPDATE inventory SET remaining=remaining+? WHERE id=?',item.quantity,item.id);
+      for(const item of inventoryItems(JSON.parse(order.cart)))this.sql.exec('UPDATE inventory SET remaining=remaining+? WHERE id=?',item.quantity,item.id);
       this.sql.exec("UPDATE orders SET state='released' WHERE id=?",order.id);
     });
   }
